@@ -23,7 +23,11 @@ rho = ECData.rho;        %Air Density
 uStar = ECData.uStar;     %Friction velocity
 Cp = ECData.Cp;
 Lv = ECData.Lv;
-WndDir = ECData.Dir;     %Wind Direction
+if any(cell2mat(cellfun(@(x) ~isempty(strfind(x, 'Dir')), fields, 'UniformOutput', 0)));
+    WndDir = ECData.Dir;     %Wind Direction
+else
+    WndDir = nan.*ones(size(Cp));
+end
 
 
 % % % [Lat, Long] = utm2ll(info.Coord_Rx(2), info.Coord_Rx(3), info.Coord_Rx(1));
@@ -32,7 +36,7 @@ WndDir = ECData.Dir;     %Wind Direction
 
 %Sign for Scintillometer flux
 if info.useECsign
-    HSign = ECData.Hsign;
+    HSign = ECData.HSign;
 else
     tmp = sign(OMS.StructParam(:, 5));
     tmp(tmp==-1) = 0;
