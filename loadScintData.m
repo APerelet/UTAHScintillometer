@@ -24,7 +24,7 @@ if fileFlag
 else
     for jj=1:length(dataFiles{ii})
        tmp = importdata([dataFiles{ii}(jj).folder, filesep, dataFiles{ii}(jj).name], ',');
-        if jj==1
+        if strfind(dataFiles{ii}(jj).name, 'header')
             Data = tmp.data;
             Header = tmp.colheaders;
             Header = ['Timestamp', Header(7:end)];

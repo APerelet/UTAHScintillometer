@@ -5,13 +5,15 @@
 
 function [OMS] = signalVar2C_met(OMS, ECData, WeightFunc, info)
 
+tmp = OMS.MWSC(:, [2, 4, 8]);
+
 fprintf('Calculating Structure Parameters...\n');
 %Calculate Cn2
 
 OMS.Cn2 = [OMS.MWSC(:, 1), ...                %time
-    OMS.MWSC(:, 8)./WeightFunc.G(1),... 
-    OMS.MWSC(:, 10)./WeightFunc.G(2),...
-    OMS.MWSC(:, 9)./WeightFunc.G(3)];
+    tmp(:, 3)./WeightFunc.G(1),... 
+    tmp(:, 2)./WeightFunc.G(2),...
+    tmp(:, 1)./WeightFunc.G(3)];
 OMS.Cn2Header = {'TIMESTAMP', 'Cn2 LAS', 'Cn2 OMS', 'Cn2 MWS'};
 
 
