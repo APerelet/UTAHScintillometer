@@ -35,6 +35,15 @@ nancheck = (sum(isnan(T_fw))+sum(isnan(T_son))+sum(isnan(T_slow)))/(3*length(T_f
 if nancheck>0.95
     error('No temperature data');
 end
+
+%r_Tq
+if info.rTqAssume
+   r_Tq_tmp = nan(size(ECData.HSign));
+   r_Tq_tmp(ECData.HSign==1) = info.rTqLim(1);
+   r_Tq_tmp(ECData.HSign==0) = info.rTqLim(2);
+else
+    r_Tq_tmp = nan(size(ECData.HSign));
+end
 %%%%NEW
 
 %%%%OLD
@@ -102,17 +111,17 @@ for ii=1:length(OMS.Cn2(:, 2:end))
     check = [OMS.Cn2(ii, 2:end), T_fw(ii), P(ii), q(ii)];
     if ~isnan(sum(check))
         [Ct2_fw(ii), Ctq_fw(ii), Cq2_fw(ii), r_tq_fw(ii), ~] = ...
-            scint_StructParams(OMS.Cn2(ii, 2:end)', T_fw(ii), P(ii), q(ii), l1);
+            scint_StructParams(OMS.Cn2(ii, 2:end)', T_fw(ii), P(ii), q(ii), l1, info.rTqAssume, r_Tq_tmp(ii));
     end
     check = [OMS.Cn2(ii, 2:end), T_son(ii), P(ii), q(ii)];
     if ~isnan(sum(check))
         [Ct2_son(ii), Ctq_son(ii), Cq2_son(ii), r_tq_son(ii), ~] = ...
-            scint_StructParams(OMS.Cn2(ii, 2:end)', T_son(ii), P(ii), q(ii), l1);
+            scint_StructParams(OMS.Cn2(ii, 2:end)', T_son(ii), P(ii), q(ii), l1, info.rTqAssume, r_Tq_tmp(ii));
     end
     check = [OMS.Cn2(ii, 2:end), T_slow(ii), P(ii), q(ii)];
     if ~isnan(sum(check))
         [Ct2_slow(ii), Ctq_slow(ii), Cq2_slow(ii), r_tq_slow(ii), ~] = ...
-            scint_StructParams(OMS.Cn2(ii, 2:end)', T_slow(ii), P(ii), q(ii), l1);
+            scint_StructParams(OMS.Cn2(ii, 2:end)', T_slow(ii), P(ii), q(ii), l1, info.rTqAssume, r_Tq_tmp(ii));
     end
 end
 OMS.StructParam = [OMS.MWSC(:, 1), Ct2_fw, Ctq_fw, Cq2_fw, r_tq_fw,...

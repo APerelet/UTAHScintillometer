@@ -20,7 +20,7 @@
     %nighttime - Flag for nighttime -> corrects for when r_tq is positive
         %at night
 
-function [H, LHflux, L] = StructParam_Flux(Ct2, Cq2, r_tq, z_eff, WndDir, u_star, T, rho, Cp, Lv, xt, xq, nighttime, info)
+function [H, LHflux, L] = StructParam_Flux(Ct2, Cq2, r_tq, z_eff, WndDir, WndSpd, u_star, T, rho, Cp, Lv, xt, xq, nighttime, info)
 
 if isscalar(z_eff)
     z_eff = z_eff.*ones(size(Ct2));
@@ -55,6 +55,7 @@ Q_LE_old = nan;
 q_star_old = nan;
 T_star_old = nan;
 L_ob_old = nan;
+u_star_old = nan;
 
 %Initial values
 T_star = -Q_H./(rho.*Cp.*u_star);
@@ -75,15 +76,19 @@ for ii=1:length(Ct2)
     if ~isnan(WndDir(ii))
         flag = and(info.wind_Sector(:, 1)<=WndDir(ii), WndDir(ii)<info.wind_Sector(:, 2));
         d = info.d(flag);
+        
+        z_0 = info.z_0(flag);
     else
         %If Wind direction does not exist or isnan no displacement height
         d = 0;
+        
+        z_0 = nan;
     end
     
     z_d(ii) = z_eff(ii)-d;
     
     %%%%%%%%%%%%%%%%%
-    %Sensible heat flux, T_star, and Obukhov length
+    %Sensible heat flux, T_star, u_star, and Obukhov length
     done = 0;
     doneCntr=1;
     while ~done
@@ -115,11 +120,36 @@ for ii=1:length(Ct2)
         
         %Recalculate Obukhov length
         L_ob(ii) = T(ii).*u_star(ii).^2./(kv.*g.*T_star(ii));
+        
+        if ~info.uStarEC
+            %Recalculate u_Star
+            if L_ob(ii)<0
+                x_m1(ii) = (1-16.*z_d(ii)./L_ob(ii)).^(1/4);
+                Phi1(ii) = 2.*log((1+x_m1(ii))./2)+log((1+x_m1(ii).^2)./2)+atan(x_m1(ii))+pi/2;
+
+                x_m2(ii) = (1-16.*z_0./L_ob(ii)).^(1/4);
+                Phi2(ii) = 2.*log((1+x_m2(ii))./2)+log((1+x_m2(ii).^2)./2)+atan(x_m2(ii))+pi/2;
+
+            else
+                Phi1(ii) = 1-(1+6.25.*(z_d(ii)./L_ob(ii))).^(4/5);
+
+                Phi2(ii) = 1-(1+6.25.*(z_0/L_ob(ii))).^(4/5);
+
+            end
+
+            u_star(ii) = kv.*WndSpd(ii)./(log(z_d(ii)./z_0)-Phi1(ii)+Phi2(ii));
+            
+            if u_star(ii)<1E-5
+                u_star(ii) = nan;
+            end
+        end
+         
 
         %Check to see how current iteration performs to last
-        if and(and(max(abs(Q_H(ii)-Q_H_old))<thresh,...
+        if and(and(and(max(abs(Q_H(ii)-Q_H_old))<thresh,...
                 max(abs(T_star(ii)-T_star_old))<thresh),...
-                max(abs(L_ob(ii)-L_ob_old))<thresh)
+                max(abs(L_ob(ii)-L_ob_old))<thresh),...
+                max(abs(u_star(ii)-u_star_old))<thresh)
             done=1;
             continue;
         elseif isnan(Q_H(ii))
@@ -134,6 +164,7 @@ for ii=1:length(Ct2)
         Q_H_old = Q_H(ii);
         T_star_old = T_star(ii);
         L_ob_old = L_ob(ii);
+        u_star_old = u_star(ii);
         
         %progress loop counter
         doneCntr = doneCntr+1;
@@ -191,4 +222,4 @@ end
 
 H = [T_star, Q_H];
 LHflux = [q_star, Q_LE];
-L = [z_d', L_ob];
+L = [z_d', u_star, L_ob];

@@ -19,12 +19,14 @@
 %           q       -> specific Humidity [g/g]
 %           rho     -> Air density [kg/m&3]
 %           RH_Slow*-> Slow response sensor Relative Humidity [%]
-%           u_star  -> Friction velocity
+%           uStar  -> Friction velocity
 %           Cp      -> Specific heat air
 %           Lv      -> Latent heat of vaporization
 %           Time    -> Timestamp corresponding to each measurement in
 %                      matlab datenum format
-%           Hsign   -> Sign of sensible heat flux
+%           HSign   -> Sign of sensible heat flux
+%           WndSpd  -> Wind speed [m/s]
+%           WndDir  -> Wind direction
 %
 %   *Minimum required
 %   ECData should be quality controlled
@@ -50,7 +52,7 @@ info.ScintVer = '1.0';
     end
 
 %Calculate Spectral Weighing function and Path Weighting function
-    OMS.WeightFunc = scintWeightFunc(info);
+    WeightFunc = scintWeightFunc(info);
     
 %Determine what files to load
     [dataFiles, fileFlag] = findScintFiles(info);
@@ -59,19 +61,21 @@ info.ScintVer = '1.0';
     for ii=1:length(dataFiles)
         
         %Load scintillometer data
-        OMS = loadScintData(dataFiles, ii, OMS);
+        OMS = loadScintData(dataFiles, fileFlag, ii);
 
         %Condition Data
         [OMS, ECDataCut] = conditionUTSappData(OMS, ECData, info);
+        
+        if ~isempty(ECDataCut.Time)
+            %Calculate refractive index & meteorological Structure parameters
+            OMS = signalVar2C_met(OMS, ECDataCut, WeightFunc, info);
 
-        %Calculate refractive index & meteorological Structure parameters
-        OMS = signalVar2C_met(OMS, ECDataCut, info);
+            %Calculate scintillometer fluxes
+            OMS = scintFlux(OMS, ECDataCut, WeightFunc, info);
 
-        %Calculate scintillometer fluxes
-        OMS = scintFlux(OMS, ECDataCut, info);
-
-        %Save Data
-        saveScintOutput(OMS, ECDataCut, info)
+            %Save Data
+            saveScintOutput(OMS, ECDataCut, info)
+        end
 
     end
     gong();

@@ -16,7 +16,29 @@
     %Ctq - temperature humidity cross structure param
     %r_tq - temperature humidity correlation coefficient
 
-function [Ct2, Ctq, Cq2, r_tq, A] = scint_StructParams(Cn2, T, P, q, l1)
+function [Ct2, Ctq, Cq2, r_Tq, A] = scint_StructParams(Cn2, T, P, q, l1, varargin)
+
+if nargin>5
+    if varargin{1}
+        flag = 1;
+        r_Tq = varargin{2};
+    else
+        flag = 0;
+    end
+else 
+    flag = 0;
+end
+
+checkInputs = [Cn2', T, P, q];
+if any(isnan(checkInputs))
+    Ct2 = nan;
+    Ctq = nan;
+    Cq2 = nan;
+    r_Tq = nan;
+    A = nan.*ones([1, 4]);
+    
+    return;
+end
 
 Rd = 287.058;  % [J/K/kg] Gas constant for air
 Rv = 461.495;  % [J/K/kg] Gas constant for water vapor
@@ -45,12 +67,24 @@ R = Rd+q*(Rv-Rd);
     A(2, 1) = -P/T*(bt1_mw+bt2_mw*(Rv/R*q));            %A_t_mw
     A(2, 2) = P/T*(Rv/R)*q*bq2_mw*(1-q/R*(Rv-Rd));     %A_q_mw
 
-%Coefficient Matrix
-M = [A(1, 1)^2/T^2, 2*A(1, 1)*A(1, 2)/(T*q), A(1, 2)^2/q^2;...
-    A(1, 1)*A(2, 1)/T^2, (A(1, 1)*A(2, 2)+A(2, 1)*A(1, 2))/(T*q), A(1, 2)*A(2, 2)/q^2;...
-    A(2, 1)^2/T^2, 2*A(2, 1)*A(2, 2)/(T*q), A(2, 2)^2/q^2];
+    
+if flag
+    C_met(1) = (A(2, 2)^2*Cn2(1)+A(1, 2)^2*Cn2(3)+2*r_Tq*A(1, 2)*A(2,2)*sqrt(Cn2(1)*Cn2(3)))/...
+        ((A(2, 1)*A(1, 2)-A(1, 1)*A(2, 2))^2*T^(-2));
+    
+    C_met(3) = (A(2, 1)^2*Cn2(1)+A(1, 1)^2*Cn2(3)+2*r_Tq*A(1, 1)*A(2,1)*sqrt(Cn2(1)*Cn2(3)))/...
+        ((A(2, 1)*A(1, 2)-A(1, 1)*A(2, 2))^2*q^(-2));
+    
+    C_met(2) = r_Tq*sqrt(C_met(1)*C_met(3));
+else
+    %Coefficient Matrix
+    M = [A(1, 1)^2/T^2, 2*A(1, 1)*A(1, 2)/(T*q), A(1, 2)^2/q^2;...
+        A(1, 1)*A(2, 1)/T^2, (A(1, 1)*A(2, 2)+A(2, 1)*A(1, 2))/(T*q), A(1, 2)*A(2, 2)/q^2;...
+        A(2, 1)^2/T^2, 2*A(2, 1)*A(2, 2)/(T*q), A(2, 2)^2/q^2];
 
-C_met = M\Cn2;
+    C_met = M\Cn2;
+end
+
 
 A = [A(1, :), A(2, :)];
 
@@ -59,6 +93,8 @@ Ct2(Ct2<0) = nan;
 Ctq = C_met(2);
 Cq2 = C_met(3);
 Cq2(Cq2<0) = nan;
-r_tq = Ctq./sqrt(Ct2.*Cq2);
+if ~flag
+    r_Tq = Ctq./sqrt(Ct2.*Cq2);
+end
 
 

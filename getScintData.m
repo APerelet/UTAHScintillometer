@@ -20,6 +20,9 @@ for ii=1:length(dirInfo)
 end
 
 rows = input('Plese input dates of interest. e.g. [1 3 4:7] or ''0'' for all dates: ');clc;
+if isempty(rows)
+    rows = 0;
+end
 % if '0' input, make rows of interest equal to all possible dates
 if rows == 0
     rows = 1:numel(dirInfo);

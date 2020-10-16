@@ -1,4 +1,4 @@
-function OMS = scintFlux(OMS, ECData, info)
+function OMS = scintFlux(OMS, ECData, WeightFunc, info)
 
 fprintf('Calculating Fluxes...\n');
 
@@ -18,22 +18,23 @@ else
     T = ECData.T_Son;
 end
     
+
       
 rho = ECData.rho;        %Air Density
-uStar = ECData.uStar;     %Friction velocity
 Cp = ECData.Cp;
 Lv = ECData.Lv;
-if any(cell2mat(cellfun(@(x) ~isempty(strfind(x, 'Dir')), fields, 'UniformOutput', 0)));
-    WndDir = ECData.Dir;     %Wind Direction
+if any(cell2mat(cellfun(@(x) contains(x, 'Dir'), fields, 'UniformOutput', 0)))
+    WndDir = ECData.WndDir;     %Wind Direction
 else
     WndDir = nan.*ones(size(Cp));
 end
 
-
-% % % [Lat, Long] = utm2ll(info.Coord_Rx(2), info.Coord_Rx(3), info.Coord_Rx(1));
-% % % Long = abs(Long);
-% % % timeFlag = dayNightFlag(OMS, Lat, Long, datestr(OMS.MWSC(1, 1), 'dd-mm-yyyy'), info.avgPer, info.UTC_offset, info.DST);
-
+WndSpd = ECData.WndSpd;
+if any(cell2mat(cellfun(@(x) ~isempty(strfind(x, 'uStar')), fields, 'UniformOutput', 0)))
+    uStar = ECData.uStar;     %Friction velocity
+else 
+    uStar = 0.1.*WndSpd;
+end
 %Sign for Scintillometer flux
 if info.useECsign
     HSign = ECData.HSign;
@@ -46,15 +47,15 @@ end
 
 %Calculate Effective height
 fprintf('Calculating Effective Height...\n');
-z_eff = effScintHeight(info.Z_LAS, OMS.WeightFunc.PWF(:, 2), info.L);
+z_eff = effScintHeight(info.Z_LAS, WeightFunc.PWF(:, 2), info.L);
 
 %Calculated Fluxes from OMS
 [OMS.H, OMS.LHflux, OMS.L] = ...
-    StructParam_Flux(OMS.StructParam(:, 2), ... %Ct2
-    OMS.StructParam(:, 4),...                   %Cq2
-    OMS.StructParam(:, 5),...                   %r_tq
+    StructParam_Flux(OMS.StructParam(:, 6), ... %Ct2
+    OMS.StructParam(:, 8),...                   %Cq2
+    OMS.StructParam(:, 9),...                   %r_tq
     z_eff,...                                   %Effective Height
-    WndDir, uStar, T, rho, Cp, Lv,...           %Avg Met quantities
+    WndDir, WndSpd, uStar, T, rho, Cp, Lv,...           %Avg Met quantities
     info.xt, info.xq,...                        %MOST Coefficients KH16
     ~HSign,...                                  %Night Flag
     info);                                      %info structure (for displacement height info
@@ -67,4 +68,4 @@ OMS.L = [OMS.MWSC(:, 1), OMS.L];
 OMS.HHeader = {'TIMESTAMP', 'T_star', 'H [W/m^2]'};
 OMS.LHfluxHeader = {'TIMESTAMP', 'q_star', 'LE [W/m^2]'};
 
-OMS.LHeader = {'TIMESTAMP', 'z_eff', 'L_ob'};
+OMS.LHeader = {'TIMESTAMP', 'z_eff', 'u_star', 'L_ob'};

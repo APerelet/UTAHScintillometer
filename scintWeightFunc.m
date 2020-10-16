@@ -40,12 +40,14 @@ res_k = 50000;
 x = linspace(0, L, N)';
 k = linspace(0, 500, res_k);
 
+d = abs((1-x./L).*d_Tx+x./L.*d_Rx);
+
 for kk=1:length(lambda1)
     k1 = 2*pi/lambda1(kk);
     k2 = 2*pi/lambda2(kk);
     R_r1 = info.R(kk, 1);
     R_r2 = info.R(kk, 2);
-    d = abs((1-x./L).*d_Tx+x./L.*d_Rx);
+    
     PWFtmp = zeros(length(x), length(k));
     fprintf('\n--------------------------------------------------------');
     fprintf(['\nCalculating H with: L = ', num2str(L), 'm, lamba1 = ', num2str(lambda1(kk)), 'm & lambda2 = ', num2str(lambda2(kk)), 'm...']);

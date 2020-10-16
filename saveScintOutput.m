@@ -3,6 +3,9 @@ if ~exist(info.saveDir, 'dir')
     mkdir(info.saveDir);
 end
 
+fprintf('Saving Data...\n');
+
+
 %Organize fields by alphabetical order
 OMS = orderfields(OMS);
 ECData = orderfields(ECData);

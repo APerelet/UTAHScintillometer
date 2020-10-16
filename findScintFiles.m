@@ -2,8 +2,8 @@
 
 function [dataFiles, fileFlag] = findScintFiles(info)
 
-dirMWSC = dir([info.rootDir, filesep, 'VAR_MWSC']);
-dirUTSapp = dir([info.rootDir, filesep, '*UTSapp']);
+dirMWSC = dir([info.rootDir, filesep, 'VAR_ASCII']);
+dirUTSapp = dir([info.rootDir, filesep, 'VAR_FromRAW']);
 
 if ~isempty(dirUTSapp)
     dataFiles = findScintFiles_sub(dirUTSapp);
